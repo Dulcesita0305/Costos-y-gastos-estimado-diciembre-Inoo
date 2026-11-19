@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-50">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Control de Costos y Gastos — Diciembre | Inoo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Plus Jakarta Sans', sans-serif; -webkit-tap-highlight-color: transparent; }
+    .hide-scrollbar::-webkit-scrollbar { display: none; }
+    .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .badge-op { background-color: #EEF2FF; color: #4338CA; border: 1px solid #C7D2FE; }
+    .badge-adm { background-color: #ECFDF5; color: #047857; border: 1px solid #A7F3D0; }
+    .badge-com { background-color: #FFFBEB; color: #B45309; border: 1px solid #FDE68A; }
+    .active-card-ring { outline: 2.5px solid #4F46E5; outline-offset: -2px; }
+  </style>
+</head>
+<body class="h-full text-slate-800 antialiased selection:bg-indigo-500 selection:text-white pb-12">
+
+  <!-- TOP HEADER -->
+  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/80 px-4 py-3 shadow-xs">
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center space-x-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 via-indigo-500 to-emerald-400 flex items-center justify-center shadow-md shadow-indigo-200 text-white font-black text-lg tracking-wider">
+          I
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <span class="text-[10px] font-extrabold uppercase tracking-widest text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">Inoo Finance</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 text-emerald-800">Cierre Dic</span>
+          </div>
+          <h1 class="text-sm font-bold text-slate-900 leading-tight">Costos y Gastos — Diciembre</h1>
+        </div>
+      </div>
+
+      <!-- Currency Switcher & Export -->
+      <div class="flex items-center gap-1.5">
+        <button id="currencyBtn" onclick="toggleCurrency()" class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 rounded-lg transition active:scale-95 border border-slate-200">
+          <span class="text-indigo-600 font-extrabold">S/</span>
+          <span id="currencyLabel">PEN</span>
+          <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Quick Search & Category Tabs -->
+    <div class="mt-3 space-y-2.5">
+      <!-- Search Input -->
+      <div class="relative">
+        <input 
+          type="text" 
+          id="searchInput" 
+          oninput="handleSearch(this.value)"
+          placeholder="Buscar concepto o proveedor (ej. Alquiler, Hugo)..." 
+          class="w-full pl-9 pr-8 py-2 text-xs bg-slate-100/90 hover:bg-slate-100 focus:bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition placeholder:text-slate-400 text-slate-800 font-medium"
+        />
+        <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35m0 0A7.5 7.5 0 1116.65 6.65a7.5 7.5 0 010 10.6z"/>
+        </svg>
+        <button id="clearSearchBtn" onclick="clearSearch()" class="hidden absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+      </div>
+
+      <!-- Horizontal Filter Pills -->
+      <div class="flex items-center gap-1.5 overflow-x-auto hide-scrollbar py-0.5 text-xs font-semibold">
+        <button onclick="setCategoryFilter('all')" id="pill-all" class="cat-pill whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-900 text-white shadow-xs transition active:scale-95">
+          Todos (30)
+        </button>
+        <button onclick="setCategoryFilter('operativos')" id="pill-operativos" class="cat-pill whitespace-nowrap px-3 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition active:scale-95">
+          <span class="inline-block w-2 h-2 rounded-full bg-indigo-600 mr-1.5"></span>Operativos (9)
+        </button>
+        <button onclick="setCategoryFilter('administrativos')" id="pill-administrativos" class="cat-pill whitespace-nowrap px-3 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition active:scale-95">
+          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1.5"></span>Administrativos (12)
+        </button>
+        <button onclick="setCategoryFilter('comerciales')" id="pill-comerciales" class="cat-pill whitespace-nowrap px-3 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition active:scale-95">
+          <span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1.5"></span>Comerciales (9)
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN SCROLLABLE CONTENT -->
+  <main class="px-4 py-4 space-y-4 max-w-md mx-auto">
+
+    <!-- KPI CARDS SECTION (Interactive Filters) -->
+    <section>
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400">Resumen Ejecutivo</span>
+        <span class="text-[11px] text-indigo-600 font-semibold cursor-pointer" onclick="setCategoryFilter('all')">Restablecer vista</span>
+      </div>
+
+      <!-- Big Total Card -->
+      <div onclick="setCategoryFilter('all')" id="card-all" class="cursor-pointer bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-4 rounded-2xl shadow-lg relative overflow-hidden transition transform active:scale-[0.99] border border-slate-800">
+        <div class="absolute -right-4 -bottom-6 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+        <div class="flex justify-between items-start mb-2">
+          <div>
+            <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wide">Total General Presupuesto</span>
+            <div class="text-2xl font-black tracking-tight text-white mt-0.5" id="val-total-general">
+              S/ 19,981.56
+            </div>
+          </div>
+          <span class="px-2 py-1 bg-white/10 text-emerald-300 font-extrabold text-[11px] rounded-lg border border-white/10 backdrop-blur-sm">
+            100% Cierre
+          </span>
+        </div>
+        <div class="flex items-center justify-between text-xs text-slate-300 pt-2 border-t border-white/10">
+          <span>30 conceptos auditados</span>
+          <span class="text-indigo-300 text-[11px] font-medium flex items-center gap-1">
+            Toca para ver todo
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+          </span>
+        </div>
+      </div>
+
+      <!-- 3 Subcategory KPI Cards Grid -->
+      <div class="grid grid-cols-3 gap-2 mt-2.5">
+        <!-- Operativos -->
+        <div onclick="setCategoryFilter('operativos')" id="card-operativos" class="cursor-pointer bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-xs hover:border-indigo-300 transition transform active:scale-95">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Operativos</span>
+          </div>
+          <div class="text-xs font-black text-slate-900" id="val-kpi-op">S/ 8,671.66</div>
+          <div class="flex items-center justify-between mt-1 text-[10px] font-bold text-indigo-600">
+            <span>43.4%</span>
+            <span class="text-slate-400 font-medium">9 c.</span>
+          </div>
+        </div>
+
+        <!-- Administrativos -->
+        <div onclick="setCategoryFilter('administrativos')" id="card-administrativos" class="cursor-pointer bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-xs hover:border-emerald-300 transition transform active:scale-95">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Administ.</span>
+          </div>
+          <div class="text-xs font-black text-slate-900" id="val-kpi-adm">S/ 6,716.40</div>
+          <div class="flex items-center justify-between mt-1 text-[10px] font-bold text-emerald-600">
+            <span>33.6%</span>
+            <span class="text-slate-400 font-medium">12 c.</span>
+          </div>
+        </div>
+
+        <!-- Comerciales -->
+        <div onclick="setCategoryFilter('comerciales')" id="card-comerciales" class="cursor-pointer bg-white p-2.5 rounded-xl border border-slate-200/90 shadow-xs hover:border-amber-300 transition transform active:scale-95">
+          <div class="flex items-center gap-1 mb-1">
+            <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+            <span class="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Comercial</span>
+          </div>
+          <div class="text-xs font-black text-slate-900" id="val-kpi-com">S/ 4,593.50</div>
+          <div class="flex items-center justify-between mt-1 text-[10px] font-bold text-amber-600">
+            <span>23.0%</span>
+            <span class="text-slate-400 font-medium">9 c.</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CHARTS SECTION -->
+    <section class="space-y-3.5">
+      
+      <!-- 1. Donut Chart Card -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between mb-3">
+          <div>
+            <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Distribución por Categoría</h2>
+            <p class="text-[11px] text-slate-500">Participación porcentual y volumen total</p>
+          </div>
+          <span class="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full">3 Áreas</span>
+        </div>
+
+        <div class="flex items-center gap-4">
+          <div class="relative w-36 h-36 flex-shrink-0">
+            <canvas id="donutChart"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <span class="text-[10px] font-semibold text-slate-400 uppercase leading-none">Total</span>
+              <span class="text-xs font-black text-slate-900 mt-0.5" id="donutTotalCenter">S/ 20k</span>
+            </div>
+          </div>
+
+          <!-- Custom Legend with click interaction -->
+          <div class="flex-1 space-y-2 text-xs">
+            <div onclick="setCategoryFilter('operativos')" class="cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition flex items-center justify-between border-l-2 border-indigo-600 pl-2">
+              <div>
+                <div class="font-bold text-slate-800 text-[11px]">Operativos</div>
+                <div class="text-[10px] text-slate-500 font-medium" id="donut-leg-op">S/ 8,671.66</div>
+              </div>
+              <span class="font-black text-indigo-600 text-xs">43.4%</span>
+            </div>
+
+            <div onclick="setCategoryFilter('administrativos')" class="cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition flex items-center justify-between border-l-2 border-emerald-500 pl-2">
+              <div>
+                <div class="font-bold text-slate-800 text-[11px]">Administrativos</div>
+                <div class="text-[10px] text-slate-500 font-medium" id="donut-leg-adm">S/ 6,716.40</div>
+              </div>
+              <span class="font-black text-emerald-600 text-xs">33.6%</span>
+            </div>
+
+            <div onclick="setCategoryFilter('comerciales')" class="cursor-pointer p-1.5 rounded-lg hover:bg-slate-50 transition flex items-center justify-between border-l-2 border-amber-500 pl-2">
+              <div>
+                <div class="font-bold text-slate-800 text-[11px]">Comerciales</div>
+                <div class="text-[10px] text-slate-500 font-medium" id="donut-leg-com">S/ 4,593.50</div>
+              </div>
+              <span class="font-black text-amber-600 text-xs">23.0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Top 10 Major Expenses (Horizontal Bar Chart) -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Top 10 Mayores Egresos</h2>
+            <p class="text-[11px] text-slate-500">Concentran el 75.8% del gasto mensual</p>
+          </div>
+          <span class="text-[10px] bg-indigo-50 text-indigo-700 font-bold px-2 py-0.5 rounded-full">Ranking</span>
+        </div>
+        <div class="h-64 w-full">
+          <canvas id="top10Chart"></canvas>
+        </div>
+      </div>
+
+      <!-- 3. Grouped Comparison: Personal vs Servicios/Software/Publicidad -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Estructura por Tipo de Gasto</h2>
+            <p class="text-[11px] text-slate-500">Personal & Honorarios vs. Servicios / Software / Ads</p>
+          </div>
+        </div>
+        <div class="h-48 w-full">
+          <canvas id="splitChart"></canvas>
+        </div>
+        <div class="flex items-center justify-center gap-5 mt-2 pt-2 border-t border-slate-100 text-[11px] font-semibold">
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded bg-indigo-600"></span>
+            <span class="text-slate-700">Personal / Honorarios</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <span class="w-3 h-3 rounded bg-emerald-500"></span>
+            <span class="text-slate-700">Servicios / Software / Ads</span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- DETAILED & INTERACTIVE TABLE -->
+    <section class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+      <!-- Table Header Bar -->
+      <div class="p-3.5 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+            <span>Detalle de Conceptos</span>
+            <span id="filteredCountBadge" class="text-[10px] font-extrabold bg-indigo-100 text-indigo-700 px-2 py-0.2 rounded-full">30</span>
+          </h2>
+          <p class="text-[11px] text-slate-500" id="tableFilterSubtext">Mostrando todas las categorías</p>
+        </div>
+
+        <!-- Sort dropdown -->
+        <div class="flex items-center gap-1.5">
+          <label for="tableSort" class="text-[10px] font-bold text-slate-400 uppercase">Orden:</label>
+          <select id="tableSort" onchange="handleSortChange(this.value)" class="text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+            <option value="desc">Mayor Monto ↓</option>
+            <option value="asc">Menor Monto ↑</option>
+            <option value="alpha">Nombre A-Z</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Active Subtotal Banner inside Table -->
+      <div class="px-4 py-2 bg-slate-50/80 border-b border-slate-200/60 flex items-center justify-between text-xs">
+        <span class="font-bold text-slate-600" id="subtotalTitle">Subtotal Mostrado:</span>
+        <span class="font-black text-slate-900 text-sm" id="subtotalValue">S/ 19,981.56</span>
+      </div>
+
+      <!-- Items List (Mobile-optimized card rows) -->
+      <div class="divide-y divide-slate-100 max-h-[460px] overflow-y-auto" id="itemsTableContainer">
+        <!-- Rendered dynamically -->
+      </div>
+      
+      <!-- Empty state container -->
+      <div id="noResultsState" class="hidden p-8 text-center">
+        <div class="w-12 h-12 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2 font-bold text-lg">?</div>
+        <p class="text-xs font-bold text-slate-700">No se encontraron resultados</p>
+        <p class="text-[11px] text-slate-400 mt-0.5">Intenta con otro término o limpia los filtros</p>
+        <button onclick="clearSearch(); setCategoryFilter('all');" class="mt-3 px-3 py-1 bg-indigo-50 text-indigo-600 rounded-lg text-xs font-bold hover:bg-indigo-100">
+          Restablecer
+        </button>
+      </div>
+
+      <!-- Export / Summary footer -->
+      <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px] text-slate-500">
+        <span>Fuente: Inoo Cierre Dic 2024</span>
+        <button onclick="downloadCSV()" class="font-bold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 active:scale-95 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+          Exportar CSV
+        </button>
+      </div>
+    </section>
+
+    <!-- SUMMARY HIGHLIGHTS / INSIGHTS -->
+    <section class="bg-gradient-to-r from-indigo-50 via-slate-50 to-emerald-50 p-3.5 rounded-2xl border border-indigo-100 text-xs">
+      <div class="flex items-center gap-1.5 font-bold text-indigo-900 mb-1">
+        <svg class="w-4 h-4 text-indigo-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+        <span>Insights Clave para Gerencia</span>
+      </div>
+      <ul class="text-[11px] text-slate-600 space-y-1 list-disc list-inside">
+        <li><strong>Costos Operativos (43.4%)</strong> lideran el gasto, impulsados por diseño y desarrollo clave (Hugo S/ 2,500 y Ricardo S/ 2,400).</li>
+        <li><strong>Alquiler (S/ 2,700.00)</strong> es el egreso unitario más alto de toda la organización (13.5% del total).</li>
+        <li><strong>Publicidad digital (FB Ads S/ 1,500.00)</strong> concentra el 32.6% de los gastos comerciales.</li>
+      </ul>
+    </section>
+
+  </main>
+
+  <script>
+    // DATA STORE
+    const rawData = [
+      // Costos Operativos (9)
+      { id: 1, name: "Hugo", amount: 2500.00, cat: "operativos", catLabel: "Operativos", type: "Personal", badgeClass: "badge-op" },
+      { id: 2, name: "Ricardo Caja", amount: 2400.00, cat: "operativos", catLabel: "Operativos", type: "Personal", badgeClass: "badge-op" },
+      { id: 3, name: "Pamela Livia", amount: 1300.00, cat: "operativos", catLabel: "Operativos", type: "Personal", badgeClass: "badge-op" },
+      { id: 4, name: "Arleth", amount: 1250.00, cat: "operativos", catLabel: "Operativos", type: "Personal", badgeClass: "badge-op" },
+      { id: 5, name: "Google Drive", amount: 728.66, cat: "operativos", catLabel: "Operativos", type: "Servicios/Soft", badgeClass: "badge-op" },
+      { id: 6, name: "Canva", amount: 240.00, cat: "operativos", catLabel: "Operativos", type: "Servicios/Soft", badgeClass: "badge-op" },
+      { id: 7, name: "Adobe (4 usuarios)", amount: 137.00, cat: "operativos", catLabel: "Operativos", type: "Servicios/Soft", badgeClass: "badge-op" },
+      { id: 8, name: "Envatos", amount: 58.00, cat: "operativos", catLabel: "Operativos", type: "Servicios/Soft", badgeClass: "badge-op" },
+      { id: 9, name: "Freepik", amount: 58.00, cat: "operativos", catLabel: "Operativos", type: "Servicios/Soft", badgeClass: "badge-op" },
+
+      // Gastos Administrativos (12)
+      { id: 10, name: "Alquiler", amount: 2700.00, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 11, name: "Omar", amount: 1000.00, cat: "administrativos", catLabel: "Administrativo", type: "Personal", badgeClass: "badge-adm" },
+      { id: 12, name: "Contador - Juan Carlos", amount: 900.00, cat: "administrativos", catLabel: "Administrativo", type: "Personal", badgeClass: "badge-adm" },
+      { id: 13, name: "AFP (Junio)", amount: 812.80, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 14, name: "Luz - 486592 - Omar", amount: 412.20, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 15, name: "EsSalud Diciembre", amount: 293.00, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 16, name: "Olga", amount: 270.00, cat: "administrativos", catLabel: "Administrativo", type: "Personal", badgeClass: "badge-adm" },
+      { id: 17, name: "Arbitrios", amount: 100.00, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 18, name: "Internet BFT", amount: 85.00, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 19, name: "Gabriel - Soporte Inoo", amount: 68.40, cat: "administrativos", catLabel: "Administrativo", type: "Personal", badgeClass: "badge-adm" },
+      { id: 20, name: "SIS", amount: 45.00, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+      { id: 21, name: "El Agua - 26084582 - Omar", amount: 30.00, cat: "administrativos", catLabel: "Administrativo", type: "Servicios/Soft", badgeClass: "badge-adm" },
+
+      // Gastos Comerciales (9)
+      { id: 22, name: "Publicidad FB Ads", amount: 1500.00, cat: "comerciales", catLabel: "Comercial", type: "Servicios/Soft", badgeClass: "badge-com" },
+      { id: 23, name: "Mauricio", amount: 750.00, cat: "comerciales", catLabel: "Comercial", type: "Personal", badgeClass: "badge-com" },
+      { id: 24, name: "Jean Piere", amount: 700.00, cat: "comerciales", catLabel: "Comercial", type: "Personal", badgeClass: "badge-com" },
+      { id: 25, name: "Virginia Palomino", amount: 410.00, cat: "comerciales", catLabel: "Comercial", type: "Personal", badgeClass: "badge-com" },
+      { id: 26, name: "GHLevel - Diciembre", amount: 350.00, cat: "comerciales", catLabel: "Comercial", type: "Servicios/Soft", badgeClass: "badge-com" },
+      { id: 27, name: "Diego Seminario (Swiss)", amount: 250.00, cat: "comerciales", catLabel: "Comercial", type: "Personal", badgeClass: "badge-com" },
+      { id: 28, name: "Entel Pago", amount: 233.50, cat: "comerciales", catLabel: "Comercial", type: "Servicios/Soft", badgeClass: "badge-com" },
+      { id: 29, name: "Porta Inoo", amount: 200.00, cat: "comerciales", catLabel: "Comercial", type: "Personal", badgeClass: "badge-com" },
+      { id: 30, name: "Pago de Google", amount: 200.00, cat: "comerciales", catLabel: "Comercial", type: "Servicios/Soft", badgeClass: "badge-com" }
+    ];
+
+    // STATE
+    let currentCategory = 'all';
+    let currentSearchTerm = '';
+    let currentSort = 'desc';
+    let currentCurrency = 'PEN'; // 'PEN' or 'USD'
+    const USD_RATE = 3.75; // Tipo de cambio referencial S/ 3.75 por USD
+
+    // Chart instances
+    let donutChartInstance = null;
+    let top10ChartInstance = null;
+    let splitChartInstance = null;
+
+    // FORMAT CURRENCY
+    function formatMoney(amount) {
+      if (currentCurrency === 'USD') {
+        const usdVal = amount / USD_RATE;
+        return '$ ' + usdVal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      }
+      return 'S/ ' + amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function toggleCurrency() {
+      currentCurrency = currentCurrency === 'PEN' ? 'USD' : 'PEN';
+      document.getElementById('currencyLabel').innerText = currentCurrency;
+      document.querySelector('#currencyBtn span:first-child').innerText = currentCurrency === 'PEN' ? 'S/' : '$';
+
+      // Update KPI displays
+      updateKPITexts();
+      renderTable();
+      renderCharts();
+    }
+
+    function updateKPITexts() {
+      document.getElementById('val-total-general').innerText = formatMoney(19981.56);
+      document.getElementById('val-kpi-op').innerText = formatMoney(8671.66);
+      document.getElementById('val-kpi-adm').innerText = formatMoney(6716.40);
+      document.getElementById('val-kpi-com').innerText = formatMoney(4593.50);
+      document.getElementById('donutTotalCenter').innerText = currentCurrency === 'PEN' ? 'S/ 20k' : '$ 5.3k';
+
+      document.getElementById('donut-leg-op').innerText = formatMoney(8671.66);
+      document.getElementById('donut-leg-adm').innerText = formatMoney(6716.40);
+      document.getElementById('donut-leg-com').innerText = formatMoney(4593.50);
+    }
+
+    // CATEGORY FILTER
+    function setCategoryFilter(cat) {
+      currentCategory = cat;
+
+      // Update Pills UI
+      const pills = ['all', 'operativos', 'administrativos', 'comerciales'];
+      pills.forEach(p => {
+        const el = document.getElementById(`pill-${p}`);
+        if (!el) return;
+        if (p === cat) {
+          el.className = "cat-pill whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-900 text-white shadow-xs transition active:scale-95";
+        } else {
+          el.className = "cat-pill whitespace-nowrap px-3 py-1.5 rounded-full bg-white text-slate-600 border border-slate-200 hover:bg-slate-50 transition active:scale-95";
+        }
+      });
+
+      // Update Active Card Rings
+      ['all', 'operativos', 'administrativos', 'comerciales'].forEach(c => {
+        const card = document.getElementById(`card-${c}`);
+        if (card) {
+          if (c === cat && c !== 'all') {
+            card.classList.add('active-card-ring');
+          } else {
+            card.classList.remove('active-card-ring');
+          }
+        }
+      });
+
+      // Update table description
+      const subtext = document.getElementById('tableFilterSubtext');
+      if (cat === 'all') subtext.innerText = 'Mostrando todas las categorías (30)';
+      else if (cat === 'operativos') subtext.innerText = 'Filtrado: Costos Operativos (9)';
+      else if (cat === 'administrativos') subtext.innerText = 'Filtrado: Gastos Administrativos (12)';
+      else if (cat === 'comerciales') subtext.innerText = 'Filtrado: Gastos Comerciales (9)';
+
+      renderTable();
+      renderCharts();
+    }
+
+    // SEARCH
+    function handleSearch(val) {
+      currentSearchTerm = val.toLowerCase().trim();
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (currentSearchTerm.length > 0) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      renderTable();
+    }
+
+    function clearSearch() {
+      document.getElementById('searchInput').value = '';
+      currentSearchTerm = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      renderTable();
+    }
+
+    function handleSortChange(val) {
+      currentSort = val;
+      renderTable();
+    }
+
+    // FILTER & SORT DATA
+    function getFilteredData() {
+      return rawData.filter(item => {
+        const matchesCat = (currentCategory === 'all') || (item.cat === currentCategory);
+        const matchesSearch = !currentSearchTerm || 
+          item.name.toLowerCase().includes(currentSearchTerm) || 
+          item.catLabel.toLowerCase().includes(currentSearchTerm) ||
+          item.type.toLowerCase().includes(currentSearchTerm);
+        return matchesCat && matchesSearch;
+      }).sort((a, b) => {
+        if (currentSort === 'desc') return b.amount - a.amount;
+        if (currentSort === 'asc') return a.amount - b.amount;
+        if (currentSort === 'alpha') return a.name.localeCompare(b.name);
+        return 0;
+      });
+    }
+
+    // RENDER TABLE
+    function renderTable() {
+      const container = document.getElementById('itemsTableContainer');
+      const filtered = getFilteredData();
+      const badgeCount = document.getElementById('filteredCountBadge');
+      const emptyState = document.getElementById('noResultsState');
+      const subtotalValEl = document.getElementById('subtotalValue');
+      const subtotalTitleEl = document.getElementById('subtotalTitle');
+
+      badgeCount.innerText = filtered.length;
+
+      // Calculate Subtotal
+      const sum = filtered.reduce((acc, curr) => acc + curr.amount, 0);
+      subtotalValEl.innerText = formatMoney(sum);
+      subtotalTitleEl.innerText = currentCategory === 'all' 
+        ? `Subtotal Mostrado (${filtered.length} conceptos):` 
+        : `Subtotal ${currentCategory.toUpperCase()} (${filtered.length}):`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+
+      let html = '';
+      filtered.forEach((item, index) => {
+        const percentOfTotal = ((item.amount / 19981.56) * 100).toFixed(1);
+        
+        let dotColor = 'bg-indigo-600';
+        let barColor = 'bg-indigo-500';
+        if (item.cat === 'administrativos') {
+          dotColor = 'bg-emerald-500';
+          barColor = 'bg-emerald-500';
+        } else if (item.cat === 'comerciales') {
+          dotColor = 'bg-amber-500';
+          barColor = 'bg-amber-500';
+        }
+
+        html += `
+          <div class="p-3 hover:bg-slate-50/80 transition flex items-center justify-between gap-3">
+            <div class="flex items-start gap-2.5 min-w-0">
+              <span class="w-6 h-6 rounded-lg bg-slate-100 text-slate-500 flex items-center justify-center text-[10px] font-bold flex-shrink-0 mt-0.5">
+                ${index + 1}
+              </span>
+              <div class="truncate">
+                <div class="text-xs font-bold text-slate-900 truncate">${item.name}</div>
+                <div class="flex items-center gap-1.5 mt-0.5">
+                  <span class="inline-flex items-center text-[9px] font-bold px-1.5 py-0.2 rounded ${item.badgeClass}">
+                    ${item.catLabel}
+                  </span>
+                  <span class="text-[10px] text-slate-400 font-medium">• ${item.type}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-right flex-shrink-0">
+              <div class="text-xs font-extrabold text-slate-900">${formatMoney(item.amount)}</div>
+              <div class="text-[10px] font-semibold text-slate-400">${percentOfTotal}% total</div>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    // CHARTS INITIALIZATION & UPDATE
+    function renderCharts() {
+      // 1. DONUT CHART
+      const donutCtx = document.getElementById('donutChart').getContext('2d');
+      const donutValues = [8671.66, 6716.40, 4593.50];
+      const donutConverted = currentCurrency === 'USD' ? donutValues.map(v => v / USD_RATE) : donutValues;
+
+      if (donutChartInstance) donutChartInstance.destroy();
+
+      donutChartInstance = new Chart(donutCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Costos Operativos', 'Gastos Administrativos', 'Gastos Comerciales'],
+          datasets: [{
+            data: donutConverted,
+            backgroundColor: ['#4F46E5', '#10B981', '#F59E0B'],
+            hoverBackgroundColor: ['#4338CA', '#059669', '#D97706'],
+            borderWidth: 2,
+            borderColor: '#FFFFFF',
+            cutout: '72%'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const val = context.raw;
+                  const total = donutConverted.reduce((a, b) => a + b, 0);
+                  const pct = ((val / total) * 100).toFixed(1) + '%';
+                  const formatted = currentCurrency === 'USD' 
+                    ? '$ ' + val.toLocaleString('en-US', { minimumFractionDigits: 2 }) 
+                    : 'S/ ' + val.toLocaleString('es-PE', { minimumFractionDigits: 2 });
+                  return ` ${context.label}: ${formatted} (${pct})`;
+                }
+              }
+            }
+          },
+          onClick: (evt, activeEls) => {
+            if (activeEls.length > 0) {
+              const idx = activeEls[0].index;
+              if (idx === 0) setCategoryFilter('operativos');
+              if (idx === 1) setCategoryFilter('administrativos');
+              if (idx === 2) setCategoryFilter('comerciales');
+            }
+          }
+        }
+      });
+
+      // 2. TOP 10 HORIZONTAL BAR CHART
+      const top10Data = [
+        { name: "Alquiler", amount: 2700.00, cat: "administrativos" },
+        { name: "Hugo", amount: 2500.00, cat: "operativos" },
+        { name: "Ricardo Caja", amount: 2400.00, cat: "operativos" },
+        { name: "Publicidad FB Ads", amount: 1500.00, cat: "comerciales" },
+        { name: "Pamela Livia", amount: 1300.00, cat: "operativos" },
+        { name: "Arleth", amount: 1250.00, cat: "operativos" },
+        { name: "Omar", amount: 1000.00, cat: "administrativos" },
+        { name: "Contador - Juan C.", amount: 900.00, cat: "administrativos" },
+        { name: "AFP (Junio)", amount: 812.80, cat: "administrativos" },
+        { name: "Mauricio", amount: 750.00, cat: "comerciales" }
+      ];
+
+      // Highlight selected category or show brand colors
+      const barColors = top10Data.map(item => {
+        if (currentCategory !== 'all' && item.cat !== currentCategory) {
+          return '#E2E8F0'; // dimmed
+        }
+        if (item.cat === 'operativos') return '#4F46E5';
+        if (item.cat === 'administrativos') return '#10B981';
+        return '#F59E0B';
+      });
+
+      const top10Amounts = currentCurrency === 'USD' 
+        ? top10Data.map(d => d.amount / USD_RATE)
+        : top10Data.map(d => d.amount);
+
+      const top10Ctx = document.getElementById('top10Chart').getContext('2d');
+      if (top10ChartInstance) top10ChartInstance.destroy();
+
+      top10ChartInstance = new Chart(top10Ctx, {
+        type: 'bar',
+        data: {
+          labels: top10Data.map(d => d.name),
+          datasets: [{
+            data: top10Amounts,
+            backgroundColor: barColors,
+            borderRadius: 6,
+            barThickness: 14
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const val = ctx.raw;
+                  return currentCurrency === 'USD' 
+                    ? ` $ ${val.toLocaleString('en-US', { minimumFractionDigits: 2 })}` 
+                    : ` S/ ${val.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: '#F1F5F9' },
+              ticks: {
+                font: { size: 10, family: 'Plus Jakarta Sans' },
+                callback: function(v) {
+                  return (currentCurrency === 'USD' ? '$' : 'S/') + (v >= 1000 ? (v/1000).toFixed(1) + 'k' : v);
+                }
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: {
+                font: { size: 10, family: 'Plus Jakarta Sans', weight: '600' },
+                color: '#334155'
+              }
+            }
+          }
+        }
+      });
+
+      // 3. GROUPED STACKED/BAR: Personal vs Servicios/Software/Publicidad
+      // Operativos: Personal = Hugo (2500) + Ricardo (2400) + Pamela (1300) + Arleth (1250) = 7450.00
+      //             Servicios/Software = Google Drive(728.66) + Canva(240) + Adobe(137) + Envatos(58) + Freepik(58) = 1221.66
+      // Admin: Personal = Omar (1000) + Contador (900) + Olga (270) + Gabriel (68.40) = 2238.40
+      //        Servicios/Gastos = Alquiler (2700) + AFP (812.80) + Luz (412.20) + EsSalud (293) + Arbitrios (100) + Internet (85) + SIS (45) + Agua (30) = 4478.00
+      // Comercial: Personal = Mauricio (750) + Jean Piere (700) + Virginia (410) + Diego (250) + Porta (200) = 2310.00
+      //            Publicidad/Servicios = FB Ads (1500) + GHLevel (350) + Google (200) + Entel (233.50) = 2283.50
+
+      let splitPersonal = [7450.00, 2238.40, 2310.00];
+      let splitServicios = [1221.66, 4478.00, 2283.50];
+
+      if (currentCurrency === 'USD') {
+        splitPersonal = splitPersonal.map(v => v / USD_RATE);
+        splitServicios = splitServicios.map(v => v / USD_RATE);
+      }
+
+      const splitCtx = document.getElementById('splitChart').getContext('2d');
+      if (splitChartInstance) splitChartInstance.destroy();
+
+      splitChartInstance = new Chart(splitCtx, {
+        type: 'bar',
+        data: {
+          labels: ['Operativos', 'Administrativos', 'Comerciales'],
+          datasets: [
+            {
+              label: 'Personal / Honorarios',
+              data: splitPersonal,
+              backgroundColor: '#4F46E5',
+              borderRadius: 6
+            },
+            {
+              label: 'Servicios / Software / Ads',
+              data: splitServicios,
+              backgroundColor: '#10B981',
+              borderRadius: 6
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  const val = ctx.raw;
+                  const label = ctx.dataset.label;
+                  return ` ${label}: ${formatMoney(currentCurrency === 'USD' ? val * USD_RATE : val)}`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10, family: 'Plus Jakarta Sans', weight: '600' } }
+            },
+            y: {
+              grid: { color: '#F1F5F9' },
+              ticks: {
+                font: { size: 10 },
+                callback: function(v) {
+                  return (currentCurrency === 'USD' ? '$' : 'S/') + (v >= 1000 ? (v/1000).toFixed(0) + 'k' : v);
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // CSV EXPORT
+    function downloadCSV() {
+      const data = getFilteredData();
+      let csvContent = "data:text/csv;charset=utf-8,ID,Concepto,Categoria,Tipo,Monto (PEN)\n";
+      data.forEach(d => {
+        csvContent += `${d.id},"${d.name}","${d.catLabel}","${d.type}",${d.amount.toFixed(2)}\n`;
+      });
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Inoo_Gastos_Diciembre_${currentCategory}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // INITIAL BOOTSTRAP
+    window.addEventListener('DOMContentLoaded', () => {
+      updateKPITexts();
+      renderTable();
+      renderCharts();
+    });
+  </script>
+</body>
+</html>
